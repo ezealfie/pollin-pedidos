@@ -2,6 +2,27 @@
 
 import { useState, useEffect } from 'react'
 
+// Tipos para TypeScript
+interface PedidoItem {
+  tipo: string
+  nombre: string
+  cantidad: number
+  precio: number
+  ingredientes?: string[]
+}
+
+interface Pedido {
+  id: number
+  cliente: string
+  hora: string
+  direccion: string
+  metodoPago: string
+  items: PedidoItem[]
+  total: number
+  entregado: boolean
+  notas?: string
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [ingredientes, setIngredientes] = useState([
@@ -47,14 +68,13 @@ export default function AdminDashboard() {
   })
 
   const [nuevoIngrediente, setNuevoIngrediente] = useState({ nombre: '', precio: 0, emoji: '🥗' })
-  const [nuevoCombo, setNuevoCombo] = useState({ nombre: '', descripcion: '', precio: 0, ingredientes: [] })
+  const [nuevoCombo, setNuevoCombo] = useState({ nombre: '', descripcion: '', precio: 0, ingredientes: [] as number[] })
   const [cambioPassword, setCambioPassword] = useState({ actual: '', nueva: '', confirmar: '' })
-  const [pedidos, setPedidos] = useState([
+  const [pedidos, setPedidos] = useState<Pedido[]>([
     {
       id: 1,
-      nombre: 'Juan Pérez',
+      cliente: 'Juan Pérez',
       direccion: 'Av. Corrientes 1234',
-      telefono: '11-1234-5678',
       hora: '20:30',
       metodoPago: 'Efectivo',
       total: 1200,
@@ -62,14 +82,12 @@ export default function AdminDashboard() {
         { tipo: 'combo', nombre: 'Sándwich Completo', cantidad: 1, precio: 1200 }
       ],
       notas: 'Sin cebolla',
-      fecha: '2024-09-18',
       entregado: false
     },
     {
       id: 2,
-      nombre: 'María González',
+      cliente: 'María González',
       direccion: 'Calle Falsa 456',
-      telefono: '11-9876-5432',
       hora: '21:00',
       metodoPago: 'Tarjeta',
       total: 800,
@@ -77,7 +95,6 @@ export default function AdminDashboard() {
         { tipo: 'personalizado', nombre: 'Sándwich de Pollo', cantidad: 1, precio: 800, ingredientes: ['Lechuga', 'Tomate', 'Mayonesa'] }
       ],
       notas: '',
-      fecha: '2024-09-18',
       entregado: false
     }
   ])
@@ -94,13 +111,13 @@ export default function AdminDashboard() {
     alert('Ingrediente agregado correctamente')
   }
 
-  const editarIngrediente = (id, campo, valor) => {
+  const editarIngrediente = (id: number, campo: string, valor: any) => {
     setIngredientes(ingredientes.map(ing => 
       ing.id === id ? { ...ing, [campo]: valor } : ing
     ))
   }
 
-  const eliminarIngrediente = (id) => {
+  const eliminarIngrediente = (id: number) => {
     if (confirm('¿Estás seguro de eliminar este ingrediente?')) {
       setIngredientes(ingredientes.filter(ing => ing.id !== id))
       alert('Ingrediente eliminado')
@@ -119,21 +136,22 @@ export default function AdminDashboard() {
     alert('Combo agregado correctamente')
   }
 
-  const editarCombo = (id, campo, valor) => {
+  const editarCombo = (id: number, campo: string, valor: any) => {
     setCombos(combos.map(combo => 
       combo.id === id ? { ...combo, [campo]: valor } : combo
     ))
   }
 
-  const eliminarCombo = (id) => {
+  const eliminarCombo = (id: number) => {
     if (confirm('¿Estás seguro de eliminar este combo?')) {
       setCombos(combos.filter(combo => combo.id !== id))
       alert('Combo eliminado')
     }
   }
 
-  const toggleIngredienteCombo = (comboId, ingredienteId) => {
+  const toggleIngredienteCombo = (comboId: number, ingredienteId: number) => {
     const combo = combos.find(c => c.id === comboId)
+    if (!combo) return
     const ingredientesActuales = combo.ingredientes
     
     if (ingredientesActuales.includes(ingredienteId)) {
@@ -180,14 +198,14 @@ export default function AdminDashboard() {
     }
   }
 
-  const marcarEntregado = (pedidoId) => {
+  const marcarEntregado = (pedidoId: number) => {
     setPedidos(pedidos.map(pedido => 
       pedido.id === pedidoId ? { ...pedido, entregado: true } : pedido
     ))
     alert('Pedido marcado como entregado')
   }
 
-  const eliminarPedido = (pedidoId) => {
+  const eliminarPedido = (pedidoId: number) => {
     if (confirm('¿Estás seguro de eliminar este pedido?')) {
       setPedidos(pedidos.filter(pedido => pedido.id !== pedidoId))
       alert('Pedido eliminado')
@@ -273,15 +291,13 @@ export default function AdminDashboard() {
                   <div key={pedido.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h4 className="font-semibold text-gray-900">{pedido.nombre}</h4>
+                        <h4 className="font-semibold text-gray-900">{pedido.cliente}</h4>
                         <p className="text-sm text-gray-600">{pedido.direccion}</p>
-                        <p className="text-sm text-gray-600">Tel: {pedido.telefono}</p>
                         <p className="text-sm text-gray-600">Hora: {pedido.hora}</p>
                         <p className="text-sm text-gray-600">Pago: {pedido.metodoPago}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-orange-600">${pedido.total}</p>
-                        <p className="text-sm text-gray-500">{pedido.fecha}</p>
                       </div>
                     </div>
                     

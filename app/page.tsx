@@ -3,17 +3,33 @@
 import { useState, useEffect } from 'react'
 import { ingredientes as ingredientesData, combos as combosData, preciosMilanesa as preciosData } from '@/lib/data'
 
+// Tipos para TypeScript
+interface CarritoItem {
+  id: number
+  tipo: string
+  nombre: string
+  descripcion: string
+  precio: number
+  ingredientes: number[]
+}
+
+interface DatosCliente {
+  nombre: string
+  hora: string
+  metodoPago: string
+  notas: string
+}
+
 export default function Home() {
-  const [carrito, setCarrito] = useState([])
-  const [tipoMilanesa, setTipoMilanesa] = useState('pollo')
-  const [ingredientesSeleccionados, setIngredientesSeleccionados] = useState([])
+  const [carrito, setCarrito] = useState<CarritoItem[]>([])
+  const [tipoMilanesa, setTipoMilanesa] = useState<'pollo' | 'carne'>('pollo')
+  const [ingredientesSeleccionados, setIngredientesSeleccionados] = useState<number[]>([])
   const [ingredientes, setIngredientes] = useState(ingredientesData)
   const [combos, setCombos] = useState(combosData)
   const [preciosMilanesa, setPreciosMilanesa] = useState(preciosData)
-  const [datosCliente, setDatosCliente] = useState({
+  const [datosCliente, setDatosCliente] = useState<DatosCliente>({
     nombre: '',
     hora: '',
-    direccion: '',
     metodoPago: '',
     notas: ''
   })
@@ -28,8 +44,8 @@ export default function Home() {
     return () => clearInterval(interval)
   }, [])
 
-  const agregarCombo = (combo) => {
-    const nuevoItem = {
+  const agregarCombo = (combo: any) => {
+    const nuevoItem: CarritoItem = {
       id: Date.now(),
       tipo: 'combo',
       nombre: combo.nombre,
@@ -58,7 +74,7 @@ export default function Home() {
       return ingrediente ? ingrediente.nombre : ''
     }).join(', ')
 
-    const nuevoItem = {
+    const nuevoItem: CarritoItem = {
       id: Date.now(),
       tipo: 'personalizado',
       nombre: `Sándwich de ${tipoMilanesa}`,
@@ -70,19 +86,19 @@ export default function Home() {
     setIngredientesSeleccionados([])
   }
 
-  const quitarDelCarrito = (id) => {
+  const quitarDelCarrito = (id: number) => {
     setCarrito(carrito.filter(item => item.id !== id))
   }
 
   const total = carrito.reduce((sum, item) => sum + item.precio, 0)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (carrito.length === 0) {
       alert('Agrega al menos un sándwich al carrito')
       return
     }
-    if (!datosCliente.nombre || !datosCliente.hora || !datosCliente.direccion || !datosCliente.metodoPago) {
+    if (!datosCliente.nombre || !datosCliente.hora || !datosCliente.metodoPago) {
       alert('Completa todos los campos obligatorios')
       return
     }
@@ -92,13 +108,12 @@ export default function Home() {
     setDatosCliente({
       nombre: '',
       hora: '',
-      direccion: '',
       metodoPago: '',
       notas: ''
     })
   }
 
-  const toggleIngrediente = (id) => {
+  const toggleIngrediente = (id: number) => {
     if (ingredientesSeleccionados.includes(id)) {
       setIngredientesSeleccionados(ingredientesSeleccionados.filter(ingId => ingId !== id))
     } else {
@@ -175,26 +190,35 @@ export default function Home() {
               {/* Tipo de Milanesa */}
               <div className="bg-white rounded-lg shadow-md p-4 mb-4">
                 <h3 className="font-semibold text-gray-900 mb-3">Tipo de Milanesa</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  {Object.entries(preciosMilanesa).map(([tipo, precio]) => (
-                    <button
-                      key={tipo}
-                      onClick={() => setTipoMilanesa(tipo)}
-                      className={`p-3 rounded-lg border-2 transition-colors ${
-                        tipoMilanesa === tipo
-                          ? 'border-orange-500 bg-orange-50 text-orange-700'
-                          : 'border-gray-200 hover:border-orange-300'
-                      }`}
-                    >
-                      <div className="text-center">
-                        <div className="text-2xl mb-1">
-                          {tipo === 'pollo' ? '🐔' : tipo === 'carne' ? '🥩' : '🍤'}
-                        </div>
-                        <div className="font-medium capitalize">{tipo}</div>
-                        <div className="text-sm text-gray-600">${precio}</div>
-                      </div>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setTipoMilanesa('pollo')}
+                    className={`p-3 rounded-lg border-2 transition-colors ${
+                      tipoMilanesa === 'pollo'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                        : 'border-gray-200 hover:border-orange-300'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-2xl mb-1">🐔</div>
+                      <div className="font-medium capitalize">Pollo</div>
+                      <div className="text-sm text-gray-600">${preciosMilanesa.pollo}</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setTipoMilanesa('carne')}
+                    className={`p-3 rounded-lg border-2 transition-colors ${
+                      tipoMilanesa === 'carne'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                        : 'border-gray-200 hover:border-orange-300'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-2xl mb-1">🥩</div>
+                      <div className="font-medium capitalize">Carne</div>
+                      <div className="text-sm text-gray-600">${preciosMilanesa.carne}</div>
+                    </div>
+                  </button>
                 </div>
               </div>
 
@@ -303,20 +327,6 @@ export default function Home() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Dirección * <span className="text-red-500">(Obligatorio)</span>
-                  </label>
-                  <textarea
-                    name="direccion"
-                    value={datosCliente.direccion}
-                    onChange={(e) => setDatosCliente({...datosCliente, direccion: e.target.value})}
-                    required
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Calle, número, barrio, ciudad"
-                  />
-                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -359,6 +369,43 @@ export default function Home() {
                 </button>
               </div>
             </form>
+
+            {/* Dirección del Local */}
+            <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">📍 Nuestra Ubicación</h3>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-3">
+                  <span className="text-orange-500 text-xl">🏪</span>
+                  <div>
+                    <p className="font-semibold text-gray-900">Gra-Hu Rotisería</p>
+                    <p className="text-gray-600">Av. Principal 123, Centro</p>
+                    <p className="text-gray-600">Ciudad, Provincia</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <span className="text-orange-500 text-xl">📞</span>
+                  <div>
+                    <p className="font-semibold text-gray-900">Teléfono</p>
+                    <p className="text-gray-600">(011) 1234-5678</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <span className="text-orange-500 text-xl">🕒</span>
+                  <div>
+                    <p className="font-semibold text-gray-900">Horarios</p>
+                    <p className="text-gray-600">Lunes a Domingo: 10:00 - 22:00</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <span className="text-orange-500 text-xl">🚚</span>
+                  <div>
+                    <p className="font-semibold text-gray-900">Delivery</p>
+                    <p className="text-gray-600">Radio de entrega: 5km</p>
+                    <p className="text-gray-600">Costo de envío: $200</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
