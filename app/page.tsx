@@ -92,7 +92,7 @@ export default function Home() {
 
   const total = carrito.reduce((sum, item) => sum + item.precio, 0)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (carrito.length === 0) {
       alert('Agrega al menos un sándwich al carrito')
@@ -103,14 +103,50 @@ export default function Home() {
       return
     }
     
-    alert('¡Pedido enviado correctamente! Te contactaremos pronto.')
-    setCarrito([])
-    setDatosCliente({
-      nombre: '',
-      hora: '',
-      metodoPago: '',
-      notas: ''
-    })
+    try {
+      // Preparar los datos del pedido
+      const pedidoData = {
+        customer_name: datosCliente.nombre,
+        delivery_time: datosCliente.hora,
+        payment_method: datosCliente.metodoPago,
+        total_amount: total,
+        notes: datosCliente.notas || null,
+        items: carrito.map(item => ({
+          tipo: item.tipo,
+          nombre: item.nombre,
+          descripcion: item.descripcion,
+          precio: item.precio,
+          ingredientes: item.ingredientes
+        }))
+      }
+
+      // Enviar el pedido a la API
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(pedidoData),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        alert('¡Pedido enviado correctamente! Te contactaremos pronto.')
+        setCarrito([])
+        setDatosCliente({
+          nombre: '',
+          hora: '',
+          metodoPago: '',
+          notas: ''
+        })
+      } else {
+        alert(`Error al enviar el pedido: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Error al enviar pedido:', error)
+      alert('Error al enviar el pedido. Por favor, inténtalo de nuevo.')
+    }
   }
 
   const toggleIngrediente = (id: number) => {

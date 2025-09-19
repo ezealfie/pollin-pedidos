@@ -33,15 +33,16 @@ create table if not exists products (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Crear tabla de pedidos (opcional para futuras expansiones)
+-- Crear tabla de pedidos
 create table if not exists orders (
   id uuid primary key default uuid_generate_v4(),
   customer_name text not null,
-  customer_email text,
-  customer_phone text,
+  delivery_time text not null,
+  payment_method text not null,
   total_amount decimal(10,2) not null,
   status text default 'pending',
   notes text,
+  items jsonb not null, -- Almacenar los items del pedido como JSON
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

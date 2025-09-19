@@ -12,7 +12,7 @@ interface PedidoItem {
 }
 
 interface Pedido {
-  id: number
+  id: string
   cliente: string
   hora: string
   direccion: string
@@ -70,34 +70,46 @@ export default function AdminDashboard() {
   const [nuevoIngrediente, setNuevoIngrediente] = useState({ nombre: '', precio: 0, emoji: '🥗' })
   const [nuevoCombo, setNuevoCombo] = useState({ nombre: '', descripcion: '', precio: 0, ingredientes: [] as number[] })
   const [cambioPassword, setCambioPassword] = useState({ actual: '', nueva: '', confirmar: '' })
-  const [pedidos, setPedidos] = useState<Pedido[]>([
-    {
-      id: 1,
-      cliente: 'Juan Pérez',
-      direccion: 'Av. Corrientes 1234',
-      hora: '20:30',
-      metodoPago: 'Efectivo',
-      total: 1200,
-      items: [
-        { tipo: 'combo', nombre: 'Sándwich Completo', cantidad: 1, precio: 1200 }
-      ],
-      notas: 'Sin cebolla',
-      entregado: false
-    },
-    {
-      id: 2,
-      cliente: 'María González',
-      direccion: 'Calle Falsa 456',
-      hora: '21:00',
-      metodoPago: 'Tarjeta',
-      total: 800,
-      items: [
-        { tipo: 'personalizado', nombre: 'Sándwich de Pollo', cantidad: 1, precio: 800, ingredientes: ['Lechuga', 'Tomate', 'Mayonesa'] }
-      ],
-      notas: '',
-      entregado: false
+  const [pedidos, setPedidos] = useState<Pedido[]>([])
+
+  // Cargar pedidos desde la API
+  const cargarPedidos = async () => {
+    try {
+      const response = await fetch('/api/orders')
+      const data = await response.json()
+      
+      if (response.ok) {
+        // Convertir los datos de la API al formato esperado
+        const pedidosFormateados = data.orders.map((pedido: any) => ({
+          id: pedido.id,
+          cliente: pedido.customer_name,
+          direccion: 'Dirección no disponible', // Ya no se pide dirección
+          hora: pedido.delivery_time,
+          metodoPago: pedido.payment_method,
+          total: pedido.total_amount,
+          items: pedido.items.map((item: any) => ({
+            tipo: item.tipo,
+            nombre: item.nombre,
+            cantidad: 1,
+            precio: item.precio,
+            ingredientes: item.ingredientes || []
+          })),
+          notas: pedido.notes || '',
+          entregado: pedido.status === 'delivered'
+        }))
+        setPedidos(pedidosFormateados)
+      } else {
+        console.error('Error al cargar pedidos:', data.error)
+      }
+    } catch (error) {
+      console.error('Error al cargar pedidos:', error)
     }
-  ])
+  }
+
+  // Cargar pedidos al montar el componente
+  useEffect(() => {
+    cargarPedidos()
+  }, [])
 
   const agregarIngrediente = () => {
     if (!nuevoIngrediente.nombre || nuevoIngrediente.precio <= 0) {
@@ -198,17 +210,49 @@ export default function AdminDashboard() {
     }
   }
 
-  const marcarEntregado = (pedidoId: number) => {
-    setPedidos(pedidos.map(pedido => 
-      pedido.id === pedidoId ? { ...pedido, entregado: true } : pedido
-    ))
-    alert('Pedido marcado como entregado')
+  const marcarEntregado = async (pedidoId: string) => {
+    try {
+      const response = await fetch(`/api/orders/${pedidoId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'delivered' }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        alert('Pedido marcado como entregado')
+        cargarPedidos() // Recargar la lista de pedidos
+      } else {
+        alert(`Error al actualizar el pedido: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Error al marcar como entregado:', error)
+      alert('Error al actualizar el pedido')
+    }
   }
 
-  const eliminarPedido = (pedidoId: number) => {
+  const eliminarPedido = async (pedidoId: string) => {
     if (confirm('¿Estás seguro de eliminar este pedido?')) {
-      setPedidos(pedidos.filter(pedido => pedido.id !== pedidoId))
-      alert('Pedido eliminado')
+      try {
+        const response = await fetch(`/api/orders/${pedidoId}`, {
+          method: 'DELETE',
+        })
+
+        const result = await response.json()
+
+        if (response.ok) {
+          alert('Pedido eliminado')
+          cargarPedidos() // Recargar la lista de pedidos
+        } else {
+          alert(`Error al eliminar el pedido: ${result.error}`)
+        }
+      } catch (error) {
+        console.error('Error al eliminar pedido:', error)
+        alert('Error al eliminar el pedido')
+      }
     }
   }
 
