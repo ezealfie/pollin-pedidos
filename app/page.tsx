@@ -135,9 +135,6 @@ export default function Home() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <a href="/admin" className="text-gray-600 hover:text-orange-500 text-sm">
-                Admin
-              </a>
               <a href="/login" className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg text-sm">
                 Login Admin
               </a>
