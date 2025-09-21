@@ -63,3 +63,8 @@ export const getPreciosMilanesa = () => {
 export const getIngredientes = () => {
   return ingredientes
 }
+
+// Función para obtener los combos actuales
+export const getCombos = () => {
+  return combos
+}

@@ -90,6 +90,14 @@ export default function AdminDashboard() {
   const [nuevoCombo, setNuevoCombo] = useState({ nombre: '', descripcion: '', precio: 0, ingredientes: [] as number[] })
   const [cambioPassword, setCambioPassword] = useState({ actual: '', nueva: '', confirmar: '' })
   const [pedidos, setPedidos] = useState<Pedido[]>([])
+  const [notificacion, setNotificacion] = useState({ mostrar: false, mensaje: '', tipo: 'success' })
+
+  const mostrarNotificacion = (mensaje: string, tipo: 'success' | 'error' = 'success') => {
+    setNotificacion({ mostrar: true, mensaje, tipo })
+    setTimeout(() => {
+      setNotificacion({ mostrar: false, mensaje: '', tipo: 'success' })
+    }, 3000)
+  }
 
   // Cargar pedidos desde la API
   const cargarPedidos = async () => {
@@ -140,14 +148,14 @@ export default function AdminDashboard() {
 
   const agregarIngrediente = () => {
     if (!nuevoIngrediente.nombre || nuevoIngrediente.precio <= 0) {
-      alert('Completa todos los campos correctamente')
+      mostrarNotificacion('Completa todos los campos correctamente', 'error')
       return
     }
     
     const id = Math.max(...ingredientesTemporales.map(i => i.id)) + 1
     setIngredientesTemporales([...ingredientesTemporales, { ...nuevoIngrediente, id }])
     setNuevoIngrediente({ nombre: '', precio: 0, emoji: '🥗' })
-    alert('Ingrediente agregado (recuerda guardar los cambios)')
+    mostrarNotificacion('Ingrediente agregado (recuerda guardar los cambios)')
   }
 
   const editarIngrediente = (id: number, campo: string, valor: any) => {
@@ -159,20 +167,20 @@ export default function AdminDashboard() {
   const eliminarIngrediente = (id: number) => {
     if (confirm('¿Estás seguro de eliminar este ingrediente?')) {
       setIngredientesTemporales(ingredientesTemporales.filter(ing => ing.id !== id))
-      alert('Ingrediente eliminado (recuerda guardar los cambios)')
+      mostrarNotificacion('Ingrediente eliminado (recuerda guardar los cambios)')
     }
   }
 
   const agregarCombo = () => {
     if (!nuevoCombo.nombre || nuevoCombo.precio <= 0 || nuevoCombo.ingredientes.length === 0) {
-      alert('Completa todos los campos correctamente')
+      mostrarNotificacion('Completa todos los campos correctamente', 'error')
       return
     }
     
     const id = Math.max(...combos.map(c => c.id)) + 1
     setCombos([...combos, { ...nuevoCombo, id }])
     setNuevoCombo({ nombre: '', descripcion: '', precio: 0, ingredientes: [] })
-    alert('Combo agregado correctamente')
+    mostrarNotificacion('Combo agregado correctamente')
   }
 
   const editarCombo = (id: number, campo: string, valor: any) => {
@@ -184,7 +192,7 @@ export default function AdminDashboard() {
   const eliminarCombo = (id: number) => {
     if (confirm('¿Estás seguro de eliminar este combo?')) {
       setCombos(combos.filter(combo => combo.id !== id))
-      alert('Combo eliminado')
+      mostrarNotificacion('Combo eliminado')
     }
   }
 
@@ -211,43 +219,43 @@ export default function AdminDashboard() {
   const guardarPrecios = () => {
     setPreciosMilanesa(preciosTemporales)
     updatePreciosMilanesa(preciosTemporales)
-    alert('Precios actualizados correctamente')
+    mostrarNotificacion('Precios actualizados correctamente')
   }
 
   const cancelarCambiosPrecios = () => {
     setPreciosTemporales(preciosMilanesa)
-    alert('Cambios cancelados')
+    mostrarNotificacion('Cambios cancelados')
   }
 
   const guardarIngredientes = () => {
     setIngredientes(ingredientesTemporales)
     updateIngredientes(ingredientesTemporales)
-    alert('Ingredientes actualizados correctamente')
+    mostrarNotificacion('Ingredientes actualizados correctamente')
   }
 
   const cancelarCambiosIngredientes = () => {
     setIngredientesTemporales(ingredientes)
-    alert('Cambios cancelados')
+    mostrarNotificacion('Cambios cancelados')
   }
 
   const guardarPapasFritas = () => {
     setPapasFritas(papasFritasTemporal)
-    alert('Precio de papas fritas actualizado correctamente')
+    mostrarNotificacion('Precio de papas fritas actualizado correctamente')
   }
 
   const cancelarCambiosPapasFritas = () => {
     setPapasFritasTemporal(papasFritas)
-    alert('Cambios cancelados')
+    mostrarNotificacion('Cambios cancelados')
   }
 
   const cambiarPassword = async () => {
     if (cambioPassword.nueva !== cambioPassword.confirmar) {
-      alert('Las contraseñas no coinciden')
+      mostrarNotificacion('Las contraseñas no coinciden', 'error')
       return
     }
     
     if (cambioPassword.nueva.length < 6) {
-      alert('La contraseña debe tener al menos 6 caracteres')
+      mostrarNotificacion('La contraseña debe tener al menos 6 caracteres', 'error')
       return
     }
 
@@ -259,13 +267,13 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        alert('Contraseña cambiada correctamente')
+        mostrarNotificacion('Contraseña cambiada correctamente')
         setCambioPassword({ actual: '', nueva: '', confirmar: '' })
       } else {
-        alert('Error al cambiar la contraseña')
+        mostrarNotificacion('Error al cambiar la contraseña', 'error')
       }
     } catch (error) {
-      alert('Error de conexión')
+      mostrarNotificacion('Error de conexión', 'error')
     }
   }
 
@@ -282,14 +290,14 @@ export default function AdminDashboard() {
       const result = await response.json()
 
       if (response.ok) {
-        alert('Pedido marcado como entregado')
+        mostrarNotificacion('Pedido marcado como entregado')
         cargarPedidos() // Recargar la lista de pedidos
       } else {
-        alert(`Error al actualizar el pedido: ${result.error}`)
+        mostrarNotificacion(`Error al actualizar el pedido: ${result.error}`, 'error')
       }
     } catch (error) {
       console.error('Error al marcar como entregado:', error)
-      alert('Error al actualizar el pedido')
+      mostrarNotificacion('Error al actualizar el pedido', 'error')
     }
   }
 
@@ -303,14 +311,14 @@ export default function AdminDashboard() {
         const result = await response.json()
 
         if (response.ok) {
-          alert('Pedido eliminado')
+          mostrarNotificacion('Pedido eliminado')
           cargarPedidos() // Recargar la lista de pedidos
         } else {
-          alert(`Error al eliminar el pedido: ${result.error}`)
+          mostrarNotificacion(`Error al eliminar el pedido: ${result.error}`, 'error')
         }
       } catch (error) {
         console.error('Error al eliminar pedido:', error)
-        alert('Error al eliminar el pedido')
+        mostrarNotificacion('Error al eliminar el pedido', 'error')
       }
     }
   }
@@ -794,6 +802,22 @@ export default function AdminDashboard() {
             >
               Cambiar Contraseña
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Notificación */}
+      {notificacion.mostrar && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
+          notificacion.tipo === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          <div className="flex items-center">
+            <span className="mr-2">
+              {notificacion.tipo === 'success' ? '✅' : '❌'}
+            </span>
+            <span className="font-medium">{notificacion.mensaje}</span>
           </div>
         </div>
       )}

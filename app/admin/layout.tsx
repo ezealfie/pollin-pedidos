@@ -16,7 +16,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/health')
+        // Verificar si hay una sesión válida
+        const response = await fetch('/api/verify-session', {
+          credentials: 'include'
+        })
+        
         if (!response.ok) {
           router.push('/login')
           return

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getIngredientes, combos as combosData, getPreciosMilanesa } from '@/lib/data'
+import { getIngredientes, getCombos, getPreciosMilanesa } from '@/lib/data'
 
 // Tipos para TypeScript
 interface CarritoItem {
@@ -25,7 +25,7 @@ export default function Home() {
   const [tipoMilanesa, setTipoMilanesa] = useState<'pollo' | 'carne'>('pollo')
   const [ingredientesSeleccionados, setIngredientesSeleccionados] = useState<number[]>([])
   const [ingredientes, setIngredientes] = useState(getIngredientes())
-  const [combos, setCombos] = useState(combosData)
+  const [combos, setCombos] = useState(getCombos())
   const [preciosMilanesa, setPreciosMilanesa] = useState(getPreciosMilanesa())
   const [papasFritas, setPapasFritas] = useState({ precio: 400, incluir: false })
   const [datosCliente, setDatosCliente] = useState<DatosCliente>({
@@ -47,6 +47,7 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       setIngredientes(getIngredientes())
+      setCombos(getCombos())
       setPreciosMilanesa(getPreciosMilanesa())
     }, 2000) // Verificar cada 2 segundos
 
