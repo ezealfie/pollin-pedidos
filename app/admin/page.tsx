@@ -133,29 +133,60 @@ export default function AdminDashboard() {
     }
   }
 
+  // Cargar datos desde la base de datos
+  const cargarDatosAdmin = async () => {
+    try {
+      // Cargar ingredientes
+      const ingredientesResponse = await fetch('/api/ingredientes')
+      if (ingredientesResponse.ok) {
+        const ingredientesData = await ingredientesResponse.json()
+        setIngredientes(ingredientesData.ingredientes)
+        setIngredientesTemporales(ingredientesData.ingredientes)
+      }
+
+      // Cargar precios de milanesas
+      const preciosResponse = await fetch('/api/precios-milanesas')
+      if (preciosResponse.ok) {
+        const preciosData = await preciosResponse.json()
+        setPreciosMilanesa(preciosData.precios)
+        setPreciosTemporales(preciosData.precios)
+      }
+    } catch (error) {
+      console.error('Error al cargar datos del admin:', error)
+    }
+  }
+
   // Cargar pedidos al montar el componente
   useEffect(() => {
     cargarPedidos()
-    // Inicializar precios temporales con los precios actuales
-    const preciosActuales = getPreciosMilanesa()
-    setPreciosMilanesa(preciosActuales)
-    setPreciosTemporales(preciosActuales)
-    // Inicializar ingredientes temporales con los ingredientes actuales
-    const ingredientesActuales = getIngredientes()
-    setIngredientes(ingredientesActuales)
-    setIngredientesTemporales(ingredientesActuales)
+    cargarDatosAdmin()
   }, [])
 
-  const agregarIngrediente = () => {
+  const agregarIngrediente = async () => {
     if (!nuevoIngrediente.nombre || nuevoIngrediente.precio <= 0) {
       mostrarNotificacion('Completa todos los campos correctamente', 'error')
       return
     }
     
-    const id = Math.max(...ingredientesTemporales.map(i => i.id)) + 1
-    setIngredientesTemporales([...ingredientesTemporales, { ...nuevoIngrediente, id }])
-    setNuevoIngrediente({ nombre: '', precio: 0, emoji: '🥗' })
-    mostrarNotificacion('Ingrediente agregado (recuerda guardar los cambios)')
+    try {
+      const response = await fetch('/api/ingredientes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(nuevoIngrediente),
+      })
+
+      if (response.ok) {
+        mostrarNotificacion('Ingrediente agregado correctamente')
+        setNuevoIngrediente({ nombre: '', precio: 0, emoji: '🥗' })
+        cargarDatosAdmin() // Recargar datos
+      } else {
+        mostrarNotificacion('Error al agregar ingrediente', 'error')
+      }
+    } catch (error) {
+      mostrarNotificacion('Error de conexión', 'error')
+    }
   }
 
   const editarIngrediente = (id: number, campo: string, valor: any) => {
@@ -216,10 +247,26 @@ export default function AdminDashboard() {
     }
   }
 
-  const guardarPrecios = () => {
-    setPreciosMilanesa(preciosTemporales)
-    updatePreciosMilanesa(preciosTemporales)
-    mostrarNotificacion('Precios actualizados correctamente')
+  const guardarPrecios = async () => {
+    try {
+      const response = await fetch('/api/precios-milanesas', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ precios: preciosTemporales }),
+      })
+
+      if (response.ok) {
+        setPreciosMilanesa(preciosTemporales)
+        mostrarNotificacion('Precios actualizados correctamente')
+        cargarDatosAdmin() // Recargar datos
+      } else {
+        mostrarNotificacion('Error al actualizar precios', 'error')
+      }
+    } catch (error) {
+      mostrarNotificacion('Error de conexión', 'error')
+    }
   }
 
   const cancelarCambiosPrecios = () => {
@@ -227,10 +274,38 @@ export default function AdminDashboard() {
     mostrarNotificacion('Cambios cancelados')
   }
 
-  const guardarIngredientes = () => {
-    setIngredientes(ingredientesTemporales)
-    updateIngredientes(ingredientesTemporales)
-    mostrarNotificacion('Ingredientes actualizados correctamente')
+  const guardarIngredientes = async () => {
+    try {
+      // Actualizar cada ingrediente que haya cambiado
+      const updates = ingredientesTemporales.map(async (ingrediente) => {
+        const original = ingredientes.find(ing => ing.id === ingrediente.id)
+        if (original && (
+          original.nombre !== ingrediente.nombre ||
+          original.precio !== ingrediente.precio ||
+          original.emoji !== ingrediente.emoji
+        )) {
+          const response = await fetch('/api/ingredientes', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(ingrediente),
+          })
+          return response.ok
+        }
+        return true
+      })
+
+      const results = await Promise.all(updates)
+      if (results.every(result => result)) {
+        mostrarNotificacion('Ingredientes actualizados correctamente')
+        cargarDatosAdmin() // Recargar datos
+      } else {
+        mostrarNotificacion('Error al actualizar algunos ingredientes', 'error')
+      }
+    } catch (error) {
+      mostrarNotificacion('Error de conexión', 'error')
+    }
   }
 
   const cancelarCambiosIngredientes = () => {
@@ -324,7 +399,7 @@ export default function AdminDashboard() {
   }
 
   const pedidosPendientes = pedidos.filter(p => !p.entregado)
-  const totalIngresos = pedidos.reduce((sum, p) => sum + p.total, 0)
+  const totalIngresos = pedidos.filter(p => p.entregado).reduce((sum, p) => sum + p.total, 0)
   
   const stats = [
     { title: 'Ingredientes', value: ingredientes.length, icon: '🥗' },

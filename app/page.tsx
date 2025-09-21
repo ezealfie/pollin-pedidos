@@ -43,13 +43,34 @@ export default function Home() {
     }, 3000)
   }
 
+  // Cargar datos desde la base de datos
+  const cargarDatos = async () => {
+    try {
+      // Cargar ingredientes
+      const ingredientesResponse = await fetch('/api/ingredientes')
+      if (ingredientesResponse.ok) {
+        const ingredientesData = await ingredientesResponse.json()
+        setIngredientes(ingredientesData.ingredientes)
+      }
+
+      // Cargar precios de milanesas
+      const preciosResponse = await fetch('/api/precios-milanesas')
+      if (preciosResponse.ok) {
+        const preciosData = await preciosResponse.json()
+        setPreciosMilanesa(preciosData.precios)
+      }
+
+      // Cargar combos (por ahora desde el archivo local)
+      setCombos(getCombos())
+    } catch (error) {
+      console.error('Error al cargar datos:', error)
+    }
+  }
+
   // Sincronizar datos con el admin
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIngredientes(getIngredientes())
-      setCombos(getCombos())
-      setPreciosMilanesa(getPreciosMilanesa())
-    }, 2000) // Verificar cada 2 segundos
+    cargarDatos() // Cargar inicialmente
+    const interval = setInterval(cargarDatos, 3000) // Verificar cada 3 segundos
 
     return () => clearInterval(interval)
   }, [])
@@ -452,8 +473,16 @@ export default function Home() {
                   <span className="text-orange-500 text-xl">🏪</span>
                   <div>
                     <p className="font-semibold text-gray-900">Gra-Hu Rotisería</p>
-                    <p className="text-gray-600">Av. Principal 123, Centro</p>
-                    <p className="text-gray-600">Ciudad, Provincia</p>
+                    <p className="text-gray-600">Río de Janeiro 320</p>
+                    <p className="text-gray-600">C1405 Cdad. Autónoma de Buenos Aires</p>
+                    <a 
+                      href="https://www.google.com/maps/place/Gra-Hu/@-34.6116226,-58.4329561,17z/data=!3m1!4b1!4m6!3m5!1s0x95bcca429f406993:0xaca9211a8465c244!8m2!3d-34.611627!4d-58.4303812!16s%2Fg%2F1vnrm63k?entry=ttu&g_ep=EgoyMDI1MDkxNy4wIKXMDSoASAFQAw%3D%3D"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-2 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors duration-200"
+                    >
+                      🗺️ Cómo llegar
+                    </a>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
@@ -467,7 +496,8 @@ export default function Home() {
                   <span className="text-orange-500 text-xl">🕒</span>
                   <div>
                     <p className="font-semibold text-gray-900">Horarios</p>
-                    <p className="text-gray-600">Lunes a Domingo: 10:00 - 22:00</p>
+                    <p className="text-gray-600">Lunes a Viernes: 11:00 - 15:00 | 19:00 - 23:00</p>
+                    <p className="text-gray-600">Sábados y Domingos: 11:00 - 23:00</p>
                   </div>
                 </div>
               </div>
