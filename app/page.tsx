@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ingredientes as ingredientesData, combos as combosData, preciosMilanesa as preciosData } from '@/lib/data'
+import { getIngredientes, combos as combosData, getPreciosMilanesa } from '@/lib/data'
 
 // Tipos para TypeScript
 interface CarritoItem {
@@ -24,22 +24,31 @@ export default function Home() {
   const [carrito, setCarrito] = useState<CarritoItem[]>([])
   const [tipoMilanesa, setTipoMilanesa] = useState<'pollo' | 'carne'>('pollo')
   const [ingredientesSeleccionados, setIngredientesSeleccionados] = useState<number[]>([])
-  const [ingredientes, setIngredientes] = useState(ingredientesData)
+  const [ingredientes, setIngredientes] = useState(getIngredientes())
   const [combos, setCombos] = useState(combosData)
-  const [preciosMilanesa, setPreciosMilanesa] = useState(preciosData)
+  const [preciosMilanesa, setPreciosMilanesa] = useState(getPreciosMilanesa())
+  const [papasFritas, setPapasFritas] = useState({ precio: 400, incluir: false })
   const [datosCliente, setDatosCliente] = useState<DatosCliente>({
     nombre: '',
     hora: '',
     metodoPago: '',
     notas: ''
   })
+  const [notificacion, setNotificacion] = useState({ mostrar: false, mensaje: '', tipo: 'success' })
 
-  // Sincronizar datos con el admin (simulado)
+  const mostrarNotificacion = (mensaje: string, tipo: 'success' | 'error' = 'success') => {
+    setNotificacion({ mostrar: true, mensaje, tipo })
+    setTimeout(() => {
+      setNotificacion({ mostrar: false, mensaje: '', tipo: 'success' })
+    }, 3000)
+  }
+
+  // Sincronizar datos con el admin
   useEffect(() => {
     const interval = setInterval(() => {
-      // En una implementación real, aquí harías una llamada a la API
-      // para obtener los datos actualizados del admin
-    }, 5000) // Verificar cada 5 segundos
+      setIngredientes(getIngredientes())
+      setPreciosMilanesa(getPreciosMilanesa())
+    }, 2000) // Verificar cada 2 segundos
 
     return () => clearInterval(interval)
   }, [])
@@ -57,11 +66,6 @@ export default function Home() {
   }
 
   const agregarSandwichPersonalizado = () => {
-    if (ingredientesSeleccionados.length === 0) {
-      alert('Selecciona al menos un ingrediente')
-      return
-    }
-
     const precioBase = preciosMilanesa[tipoMilanesa]
     const precioIngredientes = ingredientesSeleccionados.reduce((total, id) => {
       const ingrediente = ingredientes.find(ing => ing.id === id)
@@ -69,21 +73,37 @@ export default function Home() {
     }, 0)
     const precioTotal = precioBase + precioIngredientes
 
-    const ingredientesNombres = ingredientesSeleccionados.map(id => {
-      const ingrediente = ingredientes.find(ing => ing.id === id)
-      return ingrediente ? ingrediente.nombre : ''
-    }).join(', ')
+    const ingredientesNombres = ingredientesSeleccionados.length > 0 
+      ? ingredientesSeleccionados.map(id => {
+          const ingrediente = ingredientes.find(ing => ing.id === id)
+          return ingrediente ? ingrediente.nombre : ''
+        }).join(', ')
+      : 'Sin ingredientes adicionales'
 
     const nuevoItem: CarritoItem = {
       id: Date.now(),
       tipo: 'personalizado',
       nombre: `Sándwich de ${tipoMilanesa}`,
-      descripcion: `Milanesa de ${tipoMilanesa} + ${ingredientesNombres}`,
+      descripcion: ingredientesSeleccionados.length > 0 
+        ? `Milanesa de ${tipoMilanesa} + ${ingredientesNombres}`
+        : `Milanesa de ${tipoMilanesa} (simple)`,
       precio: precioTotal,
       ingredientes: ingredientesSeleccionados
     }
     setCarrito([...carrito, nuevoItem])
     setIngredientesSeleccionados([])
+  }
+
+  const agregarPapasFritas = () => {
+    const nuevoItem: CarritoItem = {
+      id: Date.now(),
+      tipo: 'papas',
+      nombre: 'Papas Fritas',
+      descripcion: 'Papas fritas caseras, crujientes y doradas',
+      precio: papasFritas.precio,
+      ingredientes: []
+    }
+    setCarrito([...carrito, nuevoItem])
   }
 
   const quitarDelCarrito = (id: number) => {
@@ -95,11 +115,11 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (carrito.length === 0) {
-      alert('Agrega al menos un sándwich al carrito')
+      mostrarNotificacion('Agrega al menos un sándwich al carrito', 'error')
       return
     }
     if (!datosCliente.nombre || !datosCliente.hora || !datosCliente.metodoPago) {
-      alert('Completa todos los campos obligatorios')
+      mostrarNotificacion('Completa todos los campos obligatorios', 'error')
       return
     }
     
@@ -132,7 +152,7 @@ export default function Home() {
       const result = await response.json()
 
       if (response.ok) {
-        alert('¡Pedido enviado correctamente! Te contactaremos pronto.')
+        mostrarNotificacion('¡Pedido enviado correctamente! Te contactaremos pronto.')
         setCarrito([])
         setDatosCliente({
           nombre: '',
@@ -141,11 +161,11 @@ export default function Home() {
           notas: ''
         })
       } else {
-        alert(`Error al enviar el pedido: ${result.error}`)
+        mostrarNotificacion(`Error al enviar el pedido: ${result.error}`, 'error')
       }
     } catch (error) {
       console.error('Error al enviar pedido:', error)
-      alert('Error al enviar el pedido. Por favor, inténtalo de nuevo.')
+      mostrarNotificacion('Error al enviar el pedido. Por favor, inténtalo de nuevo.', 'error')
     }
   }
 
@@ -213,6 +233,26 @@ export default function Home() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Papas Fritas */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Acompañamientos</h2>
+              <div className="bg-white rounded-lg shadow-md p-4 border border-gray-100">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">🍟 Papas Fritas</h3>
+                    <p className="text-sm text-gray-600 mb-2">Papas fritas caseras, crujientes y doradas</p>
+                    <p className="text-orange-600 font-bold">${papasFritas.precio}</p>
+                  </div>
+                  <button
+                    onClick={agregarPapasFritas}
+                    className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                  >
+                    Agregar
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -429,19 +469,27 @@ export default function Home() {
                     <p className="text-gray-600">Lunes a Domingo: 10:00 - 22:00</p>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <span className="text-orange-500 text-xl">🚚</span>
-                  <div>
-                    <p className="font-semibold text-gray-900">Delivery</p>
-                    <p className="text-gray-600">Radio de entrega: 5km</p>
-                    <p className="text-gray-600">Costo de envío: $200</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Notificación */}
+      {notificacion.mostrar && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
+          notificacion.tipo === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          <div className="flex items-center">
+            <span className="mr-2">
+              {notificacion.tipo === 'success' ? '✅' : '❌'}
+            </span>
+            <span className="font-medium">{notificacion.mensaje}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

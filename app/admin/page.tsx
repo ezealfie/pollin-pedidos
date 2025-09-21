@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { updatePreciosMilanesa, getPreciosMilanesa, updateIngredientes, getIngredientes } from '@/lib/data'
 
 // Tipos para TypeScript
 interface PedidoItem {
@@ -26,6 +27,18 @@ interface Pedido {
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [ingredientes, setIngredientes] = useState([
+    { id: 1, nombre: 'Lechuga', precio: 0, emoji: '🥬' },
+    { id: 2, nombre: 'Tomate', precio: 0, emoji: '🍅' },
+    { id: 3, nombre: 'Cebolla', precio: 0, emoji: '🧅' },
+    { id: 4, nombre: 'Huevo frito', precio: 0, emoji: '🍳' },
+    { id: 5, nombre: 'Jamón', precio: 0, emoji: '🍖' },
+    { id: 6, nombre: 'Queso', precio: 0, emoji: '🧀' },
+    { id: 7, nombre: 'Mayonesa', precio: 0, emoji: '🥄' },
+    { id: 8, nombre: 'Mostaza', precio: 0, emoji: '🟡' },
+    { id: 9, nombre: 'Ketchup', precio: 0, emoji: '🍅' },
+    { id: 10, nombre: 'Pepinillos', precio: 0, emoji: '🥒' }
+  ])
+  const [ingredientesTemporales, setIngredientesTemporales] = useState([
     { id: 1, nombre: 'Lechuga', precio: 0, emoji: '🥬' },
     { id: 2, nombre: 'Tomate', precio: 0, emoji: '🍅' },
     { id: 3, nombre: 'Cebolla', precio: 0, emoji: '🧅' },
@@ -66,6 +79,12 @@ export default function AdminDashboard() {
     pollo: 0,
     carne: 0
   })
+  const [preciosTemporales, setPreciosTemporales] = useState({
+    pollo: 0,
+    carne: 0
+  })
+  const [papasFritas, setPapasFritas] = useState({ precio: 400 })
+  const [papasFritasTemporal, setPapasFritasTemporal] = useState({ precio: 400 })
 
   const [nuevoIngrediente, setNuevoIngrediente] = useState({ nombre: '', precio: 0, emoji: '🥗' })
   const [nuevoCombo, setNuevoCombo] = useState({ nombre: '', descripcion: '', precio: 0, ingredientes: [] as number[] })
@@ -109,6 +128,14 @@ export default function AdminDashboard() {
   // Cargar pedidos al montar el componente
   useEffect(() => {
     cargarPedidos()
+    // Inicializar precios temporales con los precios actuales
+    const preciosActuales = getPreciosMilanesa()
+    setPreciosMilanesa(preciosActuales)
+    setPreciosTemporales(preciosActuales)
+    // Inicializar ingredientes temporales con los ingredientes actuales
+    const ingredientesActuales = getIngredientes()
+    setIngredientes(ingredientesActuales)
+    setIngredientesTemporales(ingredientesActuales)
   }, [])
 
   const agregarIngrediente = () => {
@@ -117,22 +144,22 @@ export default function AdminDashboard() {
       return
     }
     
-    const id = Math.max(...ingredientes.map(i => i.id)) + 1
-    setIngredientes([...ingredientes, { ...nuevoIngrediente, id }])
+    const id = Math.max(...ingredientesTemporales.map(i => i.id)) + 1
+    setIngredientesTemporales([...ingredientesTemporales, { ...nuevoIngrediente, id }])
     setNuevoIngrediente({ nombre: '', precio: 0, emoji: '🥗' })
-    alert('Ingrediente agregado correctamente')
+    alert('Ingrediente agregado (recuerda guardar los cambios)')
   }
 
   const editarIngrediente = (id: number, campo: string, valor: any) => {
-    setIngredientes(ingredientes.map(ing => 
+    setIngredientesTemporales(ingredientesTemporales.map(ing => 
       ing.id === id ? { ...ing, [campo]: valor } : ing
     ))
   }
 
   const eliminarIngrediente = (id: number) => {
     if (confirm('¿Estás seguro de eliminar este ingrediente?')) {
-      setIngredientes(ingredientes.filter(ing => ing.id !== id))
-      alert('Ingrediente eliminado')
+      setIngredientesTemporales(ingredientesTemporales.filter(ing => ing.id !== id))
+      alert('Ingrediente eliminado (recuerda guardar los cambios)')
     }
   }
 
@@ -179,6 +206,38 @@ export default function AdminDashboard() {
           : c
       ))
     }
+  }
+
+  const guardarPrecios = () => {
+    setPreciosMilanesa(preciosTemporales)
+    updatePreciosMilanesa(preciosTemporales)
+    alert('Precios actualizados correctamente')
+  }
+
+  const cancelarCambiosPrecios = () => {
+    setPreciosTemporales(preciosMilanesa)
+    alert('Cambios cancelados')
+  }
+
+  const guardarIngredientes = () => {
+    setIngredientes(ingredientesTemporales)
+    updateIngredientes(ingredientesTemporales)
+    alert('Ingredientes actualizados correctamente')
+  }
+
+  const cancelarCambiosIngredientes = () => {
+    setIngredientesTemporales(ingredientes)
+    alert('Cambios cancelados')
+  }
+
+  const guardarPapasFritas = () => {
+    setPapasFritas(papasFritasTemporal)
+    alert('Precio de papas fritas actualizado correctamente')
+  }
+
+  const cancelarCambiosPapasFritas = () => {
+    setPapasFritasTemporal(papasFritas)
+    alert('Cambios cancelados')
   }
 
   const cambiarPassword = async () => {
@@ -283,6 +342,7 @@ export default function AdminDashboard() {
             { id: 'ingredientes', name: 'Ingredientes', icon: '🥗' },
             { id: 'combos', name: 'Combos', icon: '🍽️' },
             { id: 'precios', name: 'Precios Milanesas', icon: '💰' },
+            { id: 'papas', name: 'Papas Fritas', icon: '🍟' },
             { id: 'password', name: 'Cambiar Contraseña', icon: '🔒' }
           ].map((tab) => (
             <button
@@ -431,7 +491,7 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Ingredientes Actuales</h3>
             <div className="space-y-3">
-              {ingredientes.map((ingrediente) => (
+              {ingredientesTemporales.map((ingrediente) => (
                 <div key={ingrediente.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                   <div className="flex items-center space-x-4">
                     <span className="text-2xl">{ingrediente.emoji}</span>
@@ -457,6 +517,22 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               ))}
+            </div>
+            
+            {/* Botones de confirmación para ingredientes */}
+            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={cancelarCambiosIngredientes}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={guardarIngredientes}
+                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                💾 Guardar Ingredientes
+              </button>
             </div>
           </div>
         </div>
@@ -589,7 +665,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Precios de Milanesas</h3>
           <div className="space-y-4">
-            {Object.entries(preciosMilanesa).map(([tipo, precio]) => (
+            {Object.entries(preciosTemporales).map(([tipo, precio]) => (
               <div key={tipo} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                 <div className="flex items-center space-x-4">
                   <span className="text-2xl">
@@ -602,8 +678,8 @@ export default function AdminDashboard() {
                   <input
                     type="number"
                     value={precio}
-                    onChange={(e) => setPreciosMilanesa({
-                      ...preciosMilanesa,
+                    onChange={(e) => setPreciosTemporales({
+                      ...preciosTemporales,
                       [tipo]: parseInt(e.target.value) || 0
                     })}
                     className="px-3 py-2 border border-gray-300 rounded-lg w-24 focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -611,6 +687,65 @@ export default function AdminDashboard() {
                 </div>
               </div>
             ))}
+          </div>
+          
+          {/* Botones de confirmación */}
+          <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+            <button
+              onClick={cancelarCambiosPrecios}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={guardarPrecios}
+              className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              💾 Guardar Precios
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Papas Fritas Tab */}
+      {activeTab === 'papas' && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Precio de Papas Fritas</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+              <div className="flex items-center space-x-4">
+                <span className="text-2xl">🍟</span>
+                <span className="font-medium">Papas Fritas</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-600">$</span>
+                <input
+                  type="number"
+                  value={papasFritasTemporal.precio}
+                  onChange={(e) => setPapasFritasTemporal({
+                    ...papasFritasTemporal,
+                    precio: parseInt(e.target.value) || 0
+                  })}
+                  className="px-3 py-2 border border-gray-300 rounded-lg w-24 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Botones de confirmación */}
+          <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+            <button
+              onClick={cancelarCambiosPapasFritas}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={guardarPapasFritas}
+              className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              💾 Guardar Precio
+            </button>
           </div>
         </div>
       )}

@@ -53,3 +53,13 @@ export const updateCombos = (newCombos: any[]) => {
 export const updatePreciosMilanesa = (newPrecios: any) => {
   preciosMilanesa = newPrecios
 }
+
+// Función para obtener los precios actuales
+export const getPreciosMilanesa = () => {
+  return preciosMilanesa
+}
+
+// Función para obtener los ingredientes actuales
+export const getIngredientes = () => {
+  return ingredientes
+}
